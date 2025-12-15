@@ -65,11 +65,34 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Contact Form Handling
+// Contact Form Handling with Google Sheets API (OAuth 2.0)
 const contactForm = document.getElementById('contactForm');
 
+// 백엔드 API URL (서버가 실행 중이어야 함)
+const API_URL = 'http://localhost:3000/api/contact';
+const AUTH_STATUS_URL = 'http://localhost:3000/api/auth/status';
+
+// 인증 상태 확인
+async function checkAuthStatus() {
+    try {
+        const response = await fetch(AUTH_STATUS_URL);
+        const status = await response.json();
+        return status;
+    } catch (error) {
+        console.error('인증 상태 확인 실패:', error);
+        return { authenticated: false };
+    }
+}
+
 if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
+    // 페이지 로드 시 인증 상태 확인
+    checkAuthStatus().then(status => {
+        if (!status.authenticated) {
+            console.log('인증이 필요합니다. 서버를 실행하고 /auth/google로 이동하세요.');
+        }
+    });
+
+    contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         // Get form data
@@ -82,19 +105,58 @@ if (contactForm) {
             return;
         }
 
-        // Simulate form submission
         const submitButton = contactForm.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
         submitButton.textContent = '전송 중...';
         submitButton.disabled = true;
 
-        // Simulate API call
-        setTimeout(() => {
-            alert('문의가 성공적으로 전송되었습니다!\n빠른 시일 내에 연락드리겠습니다.');
-            contactForm.reset();
+        try {
+            // 백엔드 API로 데이터 전송
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                let message = '문의가 성공적으로 전송되었습니다!\n빠른 시일 내에 연락드리겠습니다.';
+                
+                // 스프레드시트가 생성된 경우 URL 표시
+                if (result.spreadsheetUrl) {
+                    message += `\n\n데이터가 다음 스프레드시트에 저장되었습니다:\n${result.spreadsheetUrl}`;
+                }
+                
+                alert(message);
+                contactForm.reset();
+            } else {
+                // 인증이 필요한 경우
+                if (result.authUrl) {
+                    const shouldAuth = confirm('인증이 필요합니다. 인증 페이지로 이동하시겠습니까?');
+                    if (shouldAuth) {
+                        // 절대 URL로 변환
+                        const authUrl = result.authUrl.startsWith('http') 
+                            ? result.authUrl 
+                            : `http://localhost:3000${result.authUrl}`;
+                        window.open(authUrl, '_blank');
+                    }
+                } else {
+                    alert('전송 중 오류가 발생했습니다: ' + (result.message || '알 수 없는 오류'));
+                }
+            }
+            
             submitButton.textContent = originalText;
             submitButton.disabled = false;
-        }, 1500);
+            
+        } catch (error) {
+            console.error('전송 중 오류 발생:', error);
+            alert('전송 중 오류가 발생했습니다. 서버가 실행 중인지 확인하고 잠시 후 다시 시도해주세요.\n\n서버 실행: node server-oauth2.js');
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+        }
     });
 }
 
