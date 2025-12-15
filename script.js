@@ -1,3 +1,20 @@
+// Mixpanel 초기화 및 페이지뷰 추적
+document.addEventListener('DOMContentLoaded', () => {
+  // 페이지 이름 추출
+  const pageName = document.title.replace(' - TechSemiconductor', '') || 'Home';
+  
+  // 페이지뷰 추적
+  if (typeof trackPageView === 'function') {
+    trackPageView(pageName);
+  } else if (window.mixpanel && window.mixpanel.track) {
+    window.mixpanel.track('Page Viewed', {
+      page_name: pageName,
+      page_url: window.location.href,
+      page_path: window.location.pathname
+    });
+  }
+});
+
 // Mobile Navigation Toggle
 const hamburger = document.querySelector('.hamburger');
 const navMenu = document.querySelector('.nav-menu');
@@ -13,6 +30,11 @@ if (hamburger && navMenu) {
         link.addEventListener('click', () => {
             navMenu.classList.remove('active');
             hamburger.classList.remove('active');
+            
+            // Mixpanel: 네비게이션 클릭 추적
+            if (typeof trackButtonClick === 'function') {
+                trackButtonClick('Navigation', { link_text: link.textContent, link_url: link.href });
+            }
         });
     });
 }
@@ -30,6 +52,13 @@ if (filterButtons.length > 0) {
             button.classList.add('active');
 
             const category = button.getAttribute('data-category');
+            
+            // Mixpanel: 제품 필터 추적
+            if (typeof trackProductFilter === 'function') {
+                trackProductFilter(category);
+            } else if (window.mixpanel && window.mixpanel.track) {
+                window.mixpanel.track('Product Filtered', { category: category });
+            }
 
             // Show/hide product categories
             productCategories.forEach(categoryEl => {
@@ -123,6 +152,37 @@ if (contactForm) {
             const result = await response.json();
 
             if (result.success) {
+                // Mixpanel: 폼 제출 성공 추적
+                const urlParams = new URLSearchParams(window.location.search);
+                if (typeof trackFormSubmit === 'function') {
+                    trackFormSubmit('Contact Form', {
+                        form_type: data.subject || 'unknown',
+                        has_product: !!urlParams.get('product')
+                    });
+                } else if (window.mixpanel && window.mixpanel.track) {
+                    window.mixpanel.track('Form Submitted', {
+                        form_name: 'Contact Form',
+                        form_type: data.subject || 'unknown',
+                        has_product: !!urlParams.get('product')
+                    });
+                }
+                
+                // 사용자 식별 (이메일)
+                if (typeof identifyUser === 'function' && data.email) {
+                    identifyUser(data.email, {
+                        name: data.name,
+                        company: data.company
+                    });
+                } else if (window.mixpanel && window.mixpanel.identify && data.email) {
+                    window.mixpanel.identify(data.email);
+                    if (window.mixpanel.people && window.mixpanel.people.set) {
+                        window.mixpanel.people.set({
+                            name: data.name,
+                            company: data.company
+                        });
+                    }
+                }
+                
                 let message = '문의가 성공적으로 전송되었습니다!\n빠른 시일 내에 연락드리겠습니다.';
                 
                 // 스프레드시트가 생성된 경우 URL 표시

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixpanel 테스트</title>
+</head>
+<body>
+    <h1>Mixpanel 테스트 페이지</h1>
+    <p>브라우저 콘솔을 열어서 Mixpanel 초기화 상태를 확인하세요.</p>
+    <button onclick="testMixpanel()">테스트 이벤트 전송</button>
+    
+    <script type="text/javascript">
+        (function(f,b){if(!b.__SV){var e,g,i,h;window.mixpanel=b;b._i=[];b.init=function(e,f,c){function g(a,d){var b=d.split(".");2==b.length&&(a=a[b[0]],d=b[1]);a[d]=function(){a.push([d].concat(Array.prototype.slice.call(arguments,0)))}}var a=b;"undefined"!==typeof c?a=b[c]=[]:c="mixpanel";a.people=a.people||[];a.people.toString=function(a){var d="person";void 0===a?d="person":d="person("+a+")";return d};a.toString=function(a){var d="mixpanel";"mixpanel"!==c&&(d+="."+c);a||(d+=" (stub)");return d};a.people.toString=function(){return a.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister opt_out_tracking has_opted_out_tracking opt_in_tracking clear_opt_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");
+        for(h=0;h<i.length;h++)g(a,i[h]);var j="set set_once union unset remove delete".split(" "),k="set set_once".split(" "),l=b._i;b._i=[];for(var m=0;m<l.length;m++){var n=l[m];var o=n[0];var p=n.slice(1);if("init"===o){b[o].apply(b,p)}else{var q=a[o];"function"===typeof q?q.apply(a,p):a.push(n)}}a._i=[];a.init(e,f,c)}};b.__SV=1.2;e=f.createElement("script");e.type="text/javascript";e.async=!0;e.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file://"===f.location.protocol&&"//cdn.mixpanel.com".match(/^\/\//)?"https://cdn.mixpanel.com":f.location.protocol+"//cdn.mixpanel.com";e.onerror=function(){var a=f.createElement("script");a.type="text/javascript";a.async=!0;a.src=f.location.protocol+"//cdn4.mixpanel.com";f.getElementsByTagName("head")[0].appendChild(a)};g=f.getElementsByTagName("script")[0];g.parentNode.insertBefore(e,g)}})(document,window.mixpanel||[]);
+    </script>
+    <script src="mixpanel-config.js"></script>
+    <script>
+        function testMixpanel() {
+            if (window.mixpanel && window.mixpanel.track) {
+                window.mixpanel.track('Test Event', {
+                    test: true,
+                    timestamp: new Date().toISOString()
+                });
+                alert('테스트 이벤트가 전송되었습니다! Mixpanel 대시보드에서 확인하세요.');
+            } else {
+                alert('Mixpanel이 초기화되지 않았습니다. 콘솔을 확인하세요.');
+            }
+        }
+        
+        // 페이지 로드 시 확인
+        setTimeout(() => {
+            console.log('Mixpanel 상태:', window.mixpanel ? '✅ 로드됨' : '❌ 로드 안됨');
+            if (window.mixpanel) {
+                console.log('Mixpanel 초기화 상태:', window.mixpanel.get_distinct_id ? '✅ 초기화됨' : '❌ 초기화 안됨');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+
